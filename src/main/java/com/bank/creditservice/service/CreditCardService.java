@@ -17,13 +17,16 @@ public class CreditCardService {
     private final CreditCardRepository creditCardRepository;
     private final CustomerCacheService customerCacheService;
     private final CustomerClientService customerClientService;
+    private final CreditEventProducer creditEventProducer;
 
     public CreditCardService(CreditCardRepository creditCardRepository,
                              CustomerClientService customerClientService,
-                             CustomerCacheService customerCacheService){
+                             CustomerCacheService customerCacheService,
+                             CreditEventProducer creditEventProducer){
         this.creditCardRepository = creditCardRepository;
         this.customerCacheService = customerCacheService;
         this.customerClientService = customerClientService;
+        this.creditEventProducer = creditEventProducer;
     }
     private Mono<Customer> validateCustomer(String customerId) {
         log.info("Validating customer with ID: {}", customerId);
@@ -62,8 +65,8 @@ public class CreditCardService {
                     creditCard.setModifiedAt(null);
                     creditCard.setStatus("ACTIVE");
                     return creditCardRepository.save(creditCard);
-                });
-
+                })
+                .doOnSuccess(creditEventProducer::publishCreditCardCreated);
     }
     public Flux<CreditCard> getAllCreditCards(){
         return creditCardRepository.findAll();
@@ -89,6 +92,7 @@ public class CreditCardService {
                     existingcredit.setStatus(updatedCreditCard.getStatus());
                     existingcredit.setModifiedAt(LocalDateTime.now());
                     return creditCardRepository.save(existingcredit);
-                });
+                })
+                .doOnSuccess(creditEventProducer::publishCreditCardUpdated);
     }
 }

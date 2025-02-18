@@ -17,13 +17,15 @@ public class CreditService {
     private final CreditRepository creditRepository;
     private final CustomerCacheService customerCacheService;
     private final CustomerClientService customerClientService;
-
+    private final CreditEventProducer creditEventProducer;
     public CreditService(CreditRepository creditRepository,
                          CustomerClientService customerClientService,
-                         CustomerCacheService customerCacheService) {
+                         CustomerCacheService customerCacheService,
+                         CreditEventProducer creditEventProducer) {
         this.creditRepository = creditRepository;
         this.customerCacheService = customerCacheService;
         this.customerClientService = customerClientService;
+        this.creditEventProducer = creditEventProducer;
     }
 
     private Mono<Customer> validateCustomer(String customerId) {
@@ -71,7 +73,8 @@ public class CreditService {
                     }
                     // Si es BUSINESS, puede tener múltiples créditos
                     return creditRepository.save(credit);
-                });
+                })
+                .doOnSuccess(creditEventProducer::publishCreditCreated);
     }
     public Flux<Credit> getAllCredits(){
         return creditRepository.findAll();
@@ -91,9 +94,11 @@ public class CreditService {
                     existingCredit.setAmount(updatedCredit.getAmount());
                     existingCredit.setInterestRate(updatedCredit.getInterestRate());
                     existingCredit.setRemainingBalance(updatedCredit.getRemainingBalance());
+                    existingCredit.setRemainingBalance(updatedCredit.getRemainingBalance());
                     existingCredit.setModifiedAt(LocalDateTime.now());
                     return creditRepository.save(existingCredit);
-                });
+                })
+                .doOnSuccess(creditEventProducer::publishCreditUpdated);
     }
     public Mono<Void> deleteCredit(String creditId){
         return creditRepository.findById(creditId)

@@ -1,0 +1,188 @@
+openapi: 3.0.3
+info:
+  title: Credit Service API
+  description: API for managing credits and credit cards in the banking system.
+  version: 1.0.0
+paths:
+  /credits:
+    post:
+      summary: Create a new credit
+      operationId: createCredit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreditRequest'
+      responses:
+        '201':
+          description: Credit created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+        '400':
+          description: Invalid input
+    get:
+      summary: Get all credits
+      operationId: getAllCredits
+      responses:
+        '200':
+          description: List of all credits
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseList'
+  /credits/{id}:
+    put:
+      summary: Update a credit
+      operationId: updateCredit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreditRequest'
+      responses:
+        '200':
+          description: Credit updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+        '404':
+          description: Credit not found
+    delete:
+      summary: Delete a credit
+      operationId: deleteCredit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Credit deleted successfully
+        '404':
+          description: Credit not found
+  /credit-cards:
+    post:
+      summary: Create a new credit card
+      operationId: createCreditCard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreditCardRequest'
+      responses:
+        '201':
+          description: Credit card created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+        '400':
+          description: Invalid input
+    get:
+      summary: Get all credit cards
+      operationId: getAllCreditCards
+      responses:
+        '200':
+          description: List of all credit cards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseList'
+  /credit-cards/{id}:
+    put:
+      summary: Update a credit card
+      operationId: updateCreditCard
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreditCardRequest'
+      responses:
+        '200':
+          description: Credit card updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+        '404':
+          description: Credit card not found
+    delete:
+      summary: Delete a credit card
+      operationId: deleteCreditCard
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Credit card deleted successfully
+        '404':
+          description: Credit card not found
+components:
+  schemas:
+    BaseResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Success"
+        data:
+          type: object
+    BaseResponseList:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Success"
+        data:
+          type: array
+          items:
+            type: object
+    CreditRequest:
+      type: object
+      properties:
+        customerId:
+          type: string
+        creditType:
+          type: string
+          enum: [PERSONAL_CREDIT, BUSINESS_CREDIT]
+        creditAmount:
+          type: number
+    CreditCardRequest:
+      type: object
+      properties:
+        customerId:
+          type: string
+        creditCardType:
+          type: string
+          enum: [PERSONAL, BUSINESS]
+        creditLimit:
+          type: number

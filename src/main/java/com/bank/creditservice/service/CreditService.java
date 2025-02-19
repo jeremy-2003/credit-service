@@ -68,10 +68,13 @@ public class CreditService {
                                     if (hasCredit) {
                                         return Mono.error(new RuntimeException("Personal customer can only have one active credit"));
                                     }
+                                    credit.setRemainingBalance(credit.getAmount());
+                                    credit.setCreatedAt(LocalDateTime.now());
                                     return creditRepository.save(credit);
                                 });
                     }
-                    // Si es BUSINESS, puede tener múltiples créditos
+                    credit.setRemainingBalance(credit.getAmount());
+                    credit.setCreatedAt(LocalDateTime.now());
                     return creditRepository.save(credit);
                 })
                 .doOnSuccess(creditEventProducer::publishCreditCreated);
@@ -93,7 +96,6 @@ public class CreditService {
                 .flatMap(existingCredit ->{
                     existingCredit.setAmount(updatedCredit.getAmount());
                     existingCredit.setInterestRate(updatedCredit.getInterestRate());
-                    existingCredit.setRemainingBalance(updatedCredit.getRemainingBalance());
                     existingCredit.setRemainingBalance(updatedCredit.getRemainingBalance());
                     existingCredit.setModifiedAt(LocalDateTime.now());
                     return creditRepository.save(existingCredit);

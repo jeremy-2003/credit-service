@@ -17,16 +17,16 @@ public class CreditCardService {
     private final CreditCardRepository creditCardRepository;
     private final CustomerCacheService customerCacheService;
     private final CustomerClientService customerClientService;
-    private final CreditEventProducer creditEventProducer;
+    private final CreditCardEventProducer creditCardEventProducer;
 
     public CreditCardService(CreditCardRepository creditCardRepository,
                              CustomerClientService customerClientService,
                              CustomerCacheService customerCacheService,
-                             CreditEventProducer creditEventProducer){
+                             CreditCardEventProducer creditCardEventProducer){
         this.creditCardRepository = creditCardRepository;
         this.customerCacheService = customerCacheService;
         this.customerClientService = customerClientService;
-        this.creditEventProducer = creditEventProducer;
+        this.creditCardEventProducer = creditCardEventProducer;
     }
     private Mono<Customer> validateCustomer(String customerId) {
         log.info("Validating customer with ID: {}", customerId);
@@ -62,11 +62,12 @@ public class CreditCardService {
                         return Mono.error(new RuntimeException("Customer type does not match credit card type"));
                     }
                     creditCard.setCreatedAt(LocalDateTime.now());
+                    creditCard.setAvailableBalance(creditCard.getCreditLimit());
                     creditCard.setModifiedAt(null);
                     creditCard.setStatus("ACTIVE");
                     return creditCardRepository.save(creditCard);
                 })
-                .doOnSuccess(creditEventProducer::publishCreditCardCreated);
+                .doOnSuccess(creditCardEventProducer::publishCreditCardCreated);
     }
     public Flux<CreditCard> getAllCreditCards(){
         return creditCardRepository.findAll();
@@ -93,6 +94,6 @@ public class CreditCardService {
                     existingcredit.setModifiedAt(LocalDateTime.now());
                     return creditCardRepository.save(existingcredit);
                 })
-                .doOnSuccess(creditEventProducer::publishCreditCardUpdated);
+                .doOnSuccess(creditCardEventProducer::publishCreditCardUpdated);
     }
 }

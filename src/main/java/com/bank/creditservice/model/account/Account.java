@@ -30,4 +30,6 @@ public class Account {
     private List<String> signers;
     private LocalDateTime createdAd;
     private LocalDateTime modifiedAd;
+    private Integer maxFreeTransaction;
+    private BigDecimal transactionCost;
 }

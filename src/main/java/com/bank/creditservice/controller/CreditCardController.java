@@ -1,8 +1,7 @@
 package com.bank.creditservice.controller;
 
 import com.bank.creditservice.dto.BaseResponse;
-import com.bank.creditservice.model.Credit;
-import com.bank.creditservice.model.CreditCard;
+import com.bank.creditservice.model.creditcard.CreditCard;
 import com.bank.creditservice.service.CreditCardService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

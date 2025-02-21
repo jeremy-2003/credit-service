@@ -1,9 +1,8 @@
-package com.bank.creditservice.model;
+package com.bank.creditservice.model.creditcard;
 
 import lombok.*;
 import nonapi.io.github.classgraph.json.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

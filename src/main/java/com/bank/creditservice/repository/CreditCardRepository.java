@@ -1,7 +1,6 @@
 package com.bank.creditservice.repository;
 
-import com.bank.creditservice.model.CreditCard;
-import org.apache.kafka.common.protocol.types.Field;
+import com.bank.creditservice.model.creditcard.CreditCard;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import reactor.core.publisher.Flux;
 

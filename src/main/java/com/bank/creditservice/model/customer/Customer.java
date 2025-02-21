@@ -1,4 +1,4 @@
-package com.bank.creditservice.model;
+package com.bank.creditservice.model.customer;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,4 +23,7 @@ public class Customer {
     private LocalDateTime createdAd;
     private LocalDateTime modifiedAd;
     private String status;
+    //Only for special profiles
+    private boolean isVip;
+    private boolean isPym;
 }

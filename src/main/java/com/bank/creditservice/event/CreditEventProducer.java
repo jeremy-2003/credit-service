@@ -1,7 +1,6 @@
-package com.bank.creditservice.service;
+package com.bank.creditservice.event;
 
-import com.bank.creditservice.model.Credit;
-import com.bank.creditservice.model.CreditCard;
+import com.bank.creditservice.model.credit.Credit;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;

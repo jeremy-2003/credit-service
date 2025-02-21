@@ -1,4 +1,4 @@
-package com.bank.creditservice.model;
+package com.bank.creditservice.model.credit;
 
 import lombok.*;
 import nonapi.io.github.classgraph.json.Id;

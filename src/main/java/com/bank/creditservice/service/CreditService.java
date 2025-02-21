@@ -1,11 +1,13 @@
 package com.bank.creditservice.service;
 
-import com.bank.creditservice.model.*;
-import com.bank.creditservice.repository.CreditCardRepository;
+import com.bank.creditservice.event.CreditEventProducer;
+import com.bank.creditservice.model.customer.Customer;
+import com.bank.creditservice.model.customer.CustomerType;
 import com.bank.creditservice.repository.CreditRepository;
+import com.bank.creditservice.model.credit.Credit;
+import com.bank.creditservice.model.credit.CreditType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

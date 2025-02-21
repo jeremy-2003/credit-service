@@ -1,6 +1,6 @@
 package com.bank.creditservice.service;
 
-import com.bank.creditservice.model.Customer;
+import com.bank.creditservice.model.customer.Customer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;

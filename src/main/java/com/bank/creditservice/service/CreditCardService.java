@@ -31,7 +31,7 @@ public class CreditCardService {
                              CustomerClientService customerClientService,
                              CustomerCacheService customerCacheService,
                              CreditCardEventProducer creditCardEventProducer,
-                             AccountClientService accountClientService){
+                             AccountClientService accountClientService) {
         this.creditCardRepository = creditCardRepository;
         this.customerCacheService = customerCacheService;
         this.customerClientService = customerClientService;
@@ -67,13 +67,16 @@ public class CreditCardService {
     public Mono<CreditCard> createCreditCard(CreditCard creditCard) {
         return validateCustomer(creditCard.getCustomerId())
                 .flatMap(validateCustomer -> {
-                    if ((validateCustomer.getCustomerType() == CustomerType.PERSONAL && CreditCardType.BUSINESS_CREDIT_CARD == creditCard.getCardType()) ||
-                            (validateCustomer.getCustomerType() == CustomerType.BUSINESS && CreditCardType.PERSONAL_CREDIT_CARD == creditCard.getCardType())) {
+                    if ((validateCustomer.getCustomerType() == CustomerType.PERSONAL &&
+                            CreditCardType.BUSINESS_CREDIT_CARD == creditCard.getCardType()) ||
+                            (validateCustomer.getCustomerType() == CustomerType.BUSINESS &&
+                                    CreditCardType.PERSONAL_CREDIT_CARD == creditCard.getCardType())) {
                         return Mono.error(new RuntimeException("Customer type does not match credit card type"));
                     }
                     return accountClientService.getAccountsByCustomer(validateCustomer.getId())
                             .flatMapMany(accounts -> {
-                                if (validateCustomer.getCustomerType() == CustomerType.PERSONAL && !accounts.isEmpty()) {
+                                if (validateCustomer.getCustomerType() == CustomerType.PERSONAL
+                                        && !accounts.isEmpty()) {
                                     boolean hasSavings = accounts.stream()
                                             .anyMatch(account -> AccountType.SAVINGS.equals(account.getAccountType()));
                                     if (hasSavings) {
@@ -84,16 +87,23 @@ public class CreditCardService {
                                                 .orElse(null);
                                         if (accountId != null) {
                                             return accountClientService.updateVipPymStatus(accountId, true, "VIP")
-                                                    .thenMany(Flux.defer(() -> customerClientService.updateVipPymStatus(creditCard.getCustomerId(), true).thenMany(Flux.empty())));
+                                                    .thenMany(Flux.defer(() -> customerClientService
+                                                        .updateVipPymStatus(creditCard.getCustomerId(), true)
+                                                            .thenMany(Flux.empty())));
                                         }
                                     }
-                                } else if (validateCustomer.getCustomerType() == CustomerType.BUSINESS && !accounts.isEmpty()) {
+                                } else if (validateCustomer.getCustomerType() == CustomerType.BUSINESS
+                                        && !accounts.isEmpty()) {
                                     List<Mono<Void>> updateMonos = accounts.stream()
-                                            .filter(account -> AccountType.CHECKING.equals(account.getAccountType()))
-                                            .map(account -> accountClientService.updateVipPymStatus(account.getId(), true, "PYM").then())
+                                            .filter(account -> AccountType.CHECKING
+                                                .equals(account.getAccountType()))
+                                            .map(account -> accountClientService
+                                                .updateVipPymStatus(account.getId(), true, "PYM").then())
                                             .collect(Collectors.toList());
                                     return Flux.concat(updateMonos)
-                                            .thenMany(Flux.defer(() -> customerClientService.updateVipPymStatus(creditCard.getCustomerId(), true).thenMany(Flux.empty())));
+                                            .thenMany(Flux.defer(() -> customerClientService
+                                                .updateVipPymStatus(creditCard.getCustomerId(),
+                                                        true).thenMany(Flux.empty())));
                                 }
                                 return Flux.empty();
                             })
@@ -108,14 +118,14 @@ public class CreditCardService {
                 .doOnSuccess(creditCardEventProducer::publishCreditCardCreated);
     }
 
-    public Flux<CreditCard> getAllCreditCards(){
+    public Flux<CreditCard> getAllCreditCards() {
         return creditCardRepository.findAll();
     }
-    public Mono<CreditCard> getCreditCardById(String creditCardId){
+    public Mono<CreditCard> getCreditCardById(String creditCardId) {
         return creditCardRepository.findById(creditCardId)
                 .switchIfEmpty(Mono.error(new RuntimeException("This credit card doesn exist")));
     }
-    public Flux<CreditCard> getCreditCardsByCustomerId(String customerId){
+    public Flux<CreditCard> getCreditCardsByCustomerId(String customerId) {
         return creditCardRepository.findByCustomerId(customerId)
                 .switchIfEmpty(Mono.error(new RuntimeException("This customer doesnt have credit cards")));
     }
@@ -140,13 +150,16 @@ public class CreditCardService {
                     CustomerType customerType = customerTypeRef.get();
 
                     if (creditCards.isEmpty()) {
-                        Mono<Customer> updateCustomerVipPymStatus = customerClientService.updateVipPymStatus(customerId, false);
+                        Mono<Customer> updateCustomerVipPymStatus = customerClientService
+                            .updateVipPymStatus(customerId, false);
                         if (customerType == CustomerType.PERSONAL) {
                             return accountClientService.getAccountsByCustomer(customerId)
                                     .flatMapMany(accounts -> {
                                         List<Mono<Void>> updateMonos = accounts.stream()
-                                                .filter(account -> AccountType.SAVINGS.equals(account.getAccountType()))
-                                                .map(account -> accountClientService.updateVipPymStatus(account.getId(), false, "VIP").then())
+                                                .filter(account -> AccountType.SAVINGS
+                                                    .equals(account.getAccountType()))
+                                                .map(account -> accountClientService
+                                                    .updateVipPymStatus(account.getId(), false, "VIP").then())
                                                 .collect(Collectors.toList());
                                         return Flux.concat(updateMonos);
                                     })
@@ -156,9 +169,11 @@ public class CreditCardService {
                             return accountClientService.getAccountsByCustomer(customerId)
                                     .flatMapMany(accounts -> {
                                         List<Mono<Void>> updateMonos = accounts.stream()
-                                                .filter(account -> AccountType.CHECKING.equals(account.getAccountType()))
-                                                .map(account -> accountClientService.updateVipPymStatus(account.getId(), false, "PYM").then())
-                                                .collect(Collectors.toList());
+                                            .filter(account -> AccountType.CHECKING
+                                                .equals(account.getAccountType()))
+                                            .map(account -> accountClientService
+                                                .updateVipPymStatus(account.getId(), false, "PYM").then())
+                                            .collect(Collectors.toList());
                                         return Flux.concat(updateMonos);
                                     })
                                     .then(updateCustomerVipPymStatus)
@@ -171,7 +186,7 @@ public class CreditCardService {
                 })
                 .then();
     }
-    public Mono<CreditCard> updateCreditCard(String creditCardId, CreditCard updatedCreditCard){
+    public Mono<CreditCard> updateCreditCard(String creditCardId, CreditCard updatedCreditCard) {
         return creditCardRepository.findById(creditCardId)
                 .flatMap(existingcredit -> {
                     existingcredit.setCreditLimit(updatedCreditCard.getCreditLimit());

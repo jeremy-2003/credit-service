@@ -8,12 +8,10 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -21,7 +19,7 @@ public class AccountClientService {
     private final WebClient webClient;
     private final String accountServiceUrl;
     public AccountClientService(WebClient.Builder webClientBuilder,
-                                @Value("${account-service.base-url}") String accountServiceUrl){
+                                @Value("${account-service.base-url}") String accountServiceUrl) {
         this.accountServiceUrl = accountServiceUrl;
         this.webClient = webClientBuilder.baseUrl(accountServiceUrl).build();
     }
@@ -40,7 +38,7 @@ public class AccountClientService {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         Mono.error(new RuntimeException("Server error: " + response.statusCode()))
                 )
-                .bodyToMono(new ParameterizedTypeReference<BaseResponse<List<Account>>>() {})
+                .bodyToMono(new ParameterizedTypeReference<BaseResponse<List<Account>>>() { })
                 .flatMap(response -> {
                     if (response.getData() != null) {
                         return Mono.just(response.getData());
@@ -70,7 +68,7 @@ public class AccountClientService {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         Mono.error(new RuntimeException("Server error: " + response.statusCode()))
                 )
-                .bodyToMono(new ParameterizedTypeReference<BaseResponse<Account>>() {})
+                .bodyToMono(new ParameterizedTypeReference<BaseResponse<Account>>() { })
                 .flatMap(response -> response.getData() != null ? Mono.just(response.getData()) : Mono.empty())
                 .doOnNext(result -> log.info("Account API response: {}", result))
                 .doOnError(e -> log.error("Error while updating account: {}", e.getMessage()))

@@ -13,15 +13,15 @@ public class CreditEventProducer {
     }
     public void publishCreditCreated(Credit credit) {
         kafkaTemplate.send("credit-created", credit.getId(), credit)
-                    .addCallback(
-                            result -> log.info("Credit created event sent successfully: {}", credit.getId()),
-                            ex -> log.error("Failed to send credit created event", ex));
+            .addCallback(
+                result -> log.info("Credit created event sent successfully: {}", credit.getId()),
+                ex -> log.error("Failed to send credit created event", ex));
     }
     public void publishCreditUpdated(Credit credit) {
         kafkaTemplate.send("credit-updated", credit.getId(), credit)
-                    .addCallback(
-                            result -> log.info("Credit updated event sent successfully: {}", credit.getId()),
-                            ex -> log.error("Failed to send credit updated event", ex)
-                    );
+            .addCallback(
+                result -> log.info("Credit updated event sent successfully: {}", credit.getId()),
+                ex -> log.error("Failed to send credit updated event", ex)
+            );
     }
 }

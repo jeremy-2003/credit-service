@@ -10,16 +10,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.util.Map;
-
 @Slf4j
 @Service
 public class CustomerClientService {
     private final WebClient webClient;
-    private final String customerServiceUrl; // Guardamos manualmente la URL base
+    private final String customerServiceUrl;
     public CustomerClientService(WebClient.Builder webClientBuilder,
                                  @Value("${customer-service.base-url}") String customerServiceUrl) {
-        this.customerServiceUrl = customerServiceUrl; // Guardamos la URL base
+        this.customerServiceUrl = customerServiceUrl;
         this.webClient = webClientBuilder.baseUrl(customerServiceUrl).build();
     }
     public Mono<Customer> getCustomerById(String customerId) {
@@ -34,9 +32,9 @@ public class CustomerClientService {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         Mono.error(new RuntimeException("Server error: " + response.statusCode()))
                 )
-                .bodyToMono(new ParameterizedTypeReference<BaseResponse<Customer>>() {})
+                .bodyToMono(new ParameterizedTypeReference<BaseResponse<Customer>>() { })
                 .flatMap(response -> {
-                    if(response.getData() != null){
+                    if (response.getData() != null) {
                         return Mono.just(response.getData());
                     } else {
                         return Mono.empty();
@@ -61,7 +59,7 @@ public class CustomerClientService {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         Mono.error(new RuntimeException("Server error: " + response.statusCode()))
                 )
-                .bodyToMono(new ParameterizedTypeReference<BaseResponse<Customer>>() {})
+                .bodyToMono(new ParameterizedTypeReference<BaseResponse<Customer>>() { })
                 .flatMap(response -> response.getData() != null ? Mono.just(response.getData()) : Mono.empty())
                 .doOnNext(result -> log.info("Customer API response: {}", result))
                 .doOnError(e -> log.error("Error while updating customer: {}", e.getMessage()))

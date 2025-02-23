@@ -14,7 +14,7 @@ import java.util.List;
 public class CreditCardController {
     private final CreditCardService creditCardService;
 
-    public CreditCardController(CreditCardService creditCardService){
+    public CreditCardController(CreditCardService creditCardService) {
         this.creditCardService = creditCardService;
     }
     @PostMapping
@@ -27,7 +27,7 @@ public class CreditCardController {
                                 .data(savedCreditCard)
                                 .build()
                         ))
-                .onErrorResume(e->{
+                .onErrorResume(e -> {
                     return Mono.just(ResponseEntity.badRequest()
                             .body(BaseResponse.<CreditCard>builder()
                                     .status(HttpStatus.BAD_REQUEST.value())
@@ -41,15 +41,14 @@ public class CreditCardController {
         return creditCardService.getAllCreditCards()
                 .collectList()
                 .map(creditCards -> {
-                    if(creditCards.isEmpty()){
+                    if (creditCards.isEmpty()) {
                         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                                 .body(BaseResponse.<List<CreditCard>>builder()
                                         .status(HttpStatus.NOT_FOUND.value())
                                         .message("No credit cards found")
                                         .data(creditCards)
                                         .build());
-                    }
-                    else{
+                    } else {
                         return ResponseEntity.ok(
                                 BaseResponse.<List<CreditCard>>builder()
                                         .status(HttpStatus.OK.value())
@@ -76,7 +75,7 @@ public class CreditCardController {
                                 .data(null)
                                 .build()
                         ))
-                .onErrorResume(e->{
+                .onErrorResume(e -> {
                     return Mono.just(ResponseEntity.badRequest()
                             .body(BaseResponse.<CreditCard>builder()
                                     .status(HttpStatus.BAD_REQUEST.value())
@@ -86,7 +85,8 @@ public class CreditCardController {
                 });
     }
     @GetMapping("/customer/{customerId}")
-    public Mono<ResponseEntity<BaseResponse<List<CreditCard>>>> getCreditCardsByCustomerId(@PathVariable String customerId) {
+    public Mono<ResponseEntity<BaseResponse<List<CreditCard>>>> getCreditCardsByCustomerId(
+            @PathVariable String customerId) {
         return creditCardService.getCreditCardsByCustomerId(customerId)
                 .collectList()
                 .map(creditCards -> ResponseEntity.ok(
@@ -103,7 +103,7 @@ public class CreditCardController {
                                 .data(null)
                                 .build()
                         ))
-                .onErrorResume(e->{
+                .onErrorResume(e -> {
                     return Mono.just(ResponseEntity.badRequest()
                             .body(BaseResponse.<List<CreditCard>>builder()
                                     .status(HttpStatus.BAD_REQUEST.value())
@@ -113,7 +113,8 @@ public class CreditCardController {
                 });
     }
     @PutMapping("/{creditCardId}")
-    public Mono<ResponseEntity<BaseResponse<CreditCard>>> updateCreditCard(@PathVariable String creditCardId, @RequestBody CreditCard updatedCreditCard) {
+    public Mono<ResponseEntity<BaseResponse<CreditCard>>> updateCreditCard(@PathVariable String creditCardId,
+                                                                           @RequestBody CreditCard updatedCreditCard) {
         return creditCardService.updateCreditCard(creditCardId, updatedCreditCard)
                 .map(creditCard -> ResponseEntity.ok(
                         BaseResponse.<CreditCard>builder()
@@ -129,7 +130,7 @@ public class CreditCardController {
                                 .data(null)
                                 .build()
                         ))
-                .onErrorResume(e->{
+                .onErrorResume(e -> {
                     return Mono.just(ResponseEntity.badRequest()
                             .body(BaseResponse.<CreditCard>builder()
                                     .status(HttpStatus.BAD_REQUEST.value())
@@ -148,7 +149,7 @@ public class CreditCardController {
                                 .data(null)
                                 .build()
                 )))
-                .onErrorResume(e->{
+                .onErrorResume(e -> {
                     return Mono.just(ResponseEntity.badRequest()
                             .body(BaseResponse.<Void>builder()
                                     .status(HttpStatus.BAD_REQUEST.value())

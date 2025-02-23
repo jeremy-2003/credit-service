@@ -59,21 +59,24 @@ public class CreditService {
     public Mono<Credit> createCredit(Credit credit) {
         return validateCustomer(credit.getCustomerId())
                 .flatMap(customer -> {
-                    if ((customer.getCustomerType() == CustomerType.PERSONAL && credit.getCreditType() == CreditType.BUSINESS) ||
-                            (customer.getCustomerType() == CustomerType.BUSINESS && credit.getCreditType() == CreditType.PERSONAL)) {
+                    if ((customer.getCustomerType() == CustomerType.PERSONAL
+                            && credit.getCreditType() == CreditType.BUSINESS) ||
+                            (customer.getCustomerType() == CustomerType.BUSINESS
+                                    && credit.getCreditType() == CreditType.PERSONAL)) {
                         return Mono.error(new RuntimeException("Customer type does not match credit type"));
                     }
-                     if (customer.getCustomerType() == CustomerType.PERSONAL) {
+                    if (customer.getCustomerType() == CustomerType.PERSONAL) {
                         return creditRepository.findByCustomerId(credit.getCustomerId())
-                                .hasElements()
-                                .flatMap(hasCredit -> {
-                                    if (hasCredit) {
-                                        return Mono.error(new RuntimeException("Personal customer can only have one active credit"));
-                                    }
-                                    credit.setRemainingBalance(credit.getAmount());
-                                    credit.setCreatedAt(LocalDateTime.now());
-                                    return creditRepository.save(credit);
-                                });
+                            .hasElements()
+                            .flatMap(hasCredit -> {
+                                if (hasCredit) {
+                                    return Mono.error(new RuntimeException("Personal customer can only " +
+                                            "have one active credit"));
+                                }
+                                credit.setRemainingBalance(credit.getAmount());
+                                credit.setCreatedAt(LocalDateTime.now());
+                                return creditRepository.save(credit);
+                            });
                     }
                     credit.setRemainingBalance(credit.getAmount());
                     credit.setCreatedAt(LocalDateTime.now());
@@ -81,21 +84,21 @@ public class CreditService {
                 })
                 .doOnSuccess(creditEventProducer::publishCreditCreated);
     }
-    public Flux<Credit> getAllCredits(){
+    public Flux<Credit> getAllCredits() {
         return creditRepository.findAll();
     }
-    public Flux<Credit> getCreditsByCustomerId(String customerId){
+    public Flux<Credit> getCreditsByCustomerId(String customerId) {
         return creditRepository.findByCustomerId(customerId)
                 .switchIfEmpty(Mono.error(new RuntimeException("This customer doesnt have credits")));
     }
-    public Mono<Credit> getCreditById(String creditId){
+    public Mono<Credit> getCreditById(String creditId) {
         return creditRepository.findById(creditId)
                 .switchIfEmpty(Mono.error(new RuntimeException("Credit not found")));
     }
-    public Mono<Credit> updateCredit(String creditId, Credit updatedCredit){
+    public Mono<Credit> updateCredit(String creditId, Credit updatedCredit) {
         return creditRepository.findById(creditId)
                 .switchIfEmpty(Mono.error(new RuntimeException("Credit not found")))
-                .flatMap(existingCredit ->{
+                .flatMap(existingCredit -> {
                     existingCredit.setAmount(updatedCredit.getAmount());
                     existingCredit.setInterestRate(updatedCredit.getInterestRate());
                     existingCredit.setRemainingBalance(updatedCredit.getRemainingBalance());
@@ -104,7 +107,7 @@ public class CreditService {
                 })
                 .doOnSuccess(creditEventProducer::publishCreditUpdated);
     }
-    public Mono<Void> deleteCredit(String creditId){
+    public Mono<Void> deleteCredit(String creditId) {
         return creditRepository.findById(creditId)
                 .switchIfEmpty(Mono.error(new RuntimeException("Credit not found")))
                 .flatMap(existingCredit -> creditRepository.deleteById(creditId));

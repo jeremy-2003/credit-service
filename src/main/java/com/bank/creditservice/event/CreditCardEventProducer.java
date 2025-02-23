@@ -12,16 +12,16 @@ public class CreditCardEventProducer {
     }
     public void publishCreditCardCreated(CreditCard creditCard) {
         kafkaTemplate.send("creditcard-created", creditCard.getId(), creditCard)
-                .addCallback(
-                        result -> log.info("Credit Card created event sent successfully: {}", creditCard.getId()),
-                        ex -> log.error("Failed to send credit card created event", ex)
-                );
+            .addCallback(
+                result -> log.info("Credit Card created event sent successfully: {}", creditCard.getId()),
+                ex -> log.error("Failed to send credit card created event", ex)
+            );
     }
     public void publishCreditCardUpdated(CreditCard creditCard) {
         kafkaTemplate.send("creditcard-updated", creditCard.getId(), creditCard)
-                .addCallback(
-                        result -> log.info("Credit Card updated event sent successfully: {}", creditCard.getId()),
-                        ex -> log.error("Failed to send credit card updated event", ex)
-                );
+            .addCallback(
+                result -> log.info("Credit Card updated event sent successfully: {}", creditCard.getId()),
+                ex -> log.error("Failed to send credit card updated event", ex)
+            );
     }
 }

@@ -1,10 +1,10 @@
 openapi: 3.0.3
 info:
   title: Credit Service API
-  description: API for managing credits and credit cards in the banking system.
+  description: API for managing credits and credit cards in the banking system
   version: 1.0.0
 paths:
-  /credits:
+  /api/credits:
     post:
       summary: Create a new credit
       operationId: createCredit
@@ -13,32 +13,70 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreditRequest'
+              $ref: '#/components/schemas/Credit'
       responses:
         '201':
           description: Credit created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BaseResponse'
+                $ref: '#/components/schemas/CreditResponse'
         '400':
-          description: Invalid input
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     get:
       summary: Get all credits
       operationId: getAllCredits
       responses:
         '200':
-          description: List of all credits
+          description: Credits retrieved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BaseResponseList'
-  /credits/{id}:
+                $ref: '#/components/schemas/CreditListResponse'
+        '404':
+          description: No credits found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/credits/{creditId}:
+    get:
+      summary: Get credit by ID
+      operationId: getCreditById
+      parameters:
+        - name: creditId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Credit details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditResponse'
+        '404':
+          description: Credit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     put:
       summary: Update a credit
       operationId: updateCredit
       parameters:
-        - name: id
+        - name: creditId
           in: path
           required: true
           schema:
@@ -48,21 +86,31 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreditRequest'
+              $ref: '#/components/schemas/Credit'
       responses:
         '200':
           description: Credit updated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BaseResponse'
+                $ref: '#/components/schemas/CreditResponse'
         '404':
           description: Credit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     delete:
       summary: Delete a credit
       operationId: deleteCredit
       parameters:
-        - name: id
+        - name: creditId
           in: path
           required: true
           schema:
@@ -70,9 +118,46 @@ paths:
       responses:
         '200':
           description: Credit deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/credits/customer/{customerId}:
+    get:
+      summary: Get credits by customer ID
+      operationId: getCreditsByCustomerId
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Credits for customer retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditListResponse'
         '404':
-          description: Credit not found
-  /credit-cards:
+          description: No credits found for customer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/credit-cards:
     post:
       summary: Create a new credit card
       operationId: createCreditCard
@@ -81,32 +166,70 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreditCardRequest'
+              $ref: '#/components/schemas/CreditCard'
       responses:
         '201':
-          description: Credit card created successfully
+          description: Credit Card created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BaseResponse'
+                $ref: '#/components/schemas/CreditCardResponse'
         '400':
-          description: Invalid input
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     get:
       summary: Get all credit cards
       operationId: getAllCreditCards
       responses:
         '200':
-          description: List of all credit cards
+          description: Credit Cards retrieved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BaseResponseList'
-  /credit-cards/{id}:
+                $ref: '#/components/schemas/CreditCardListResponse'
+        '404':
+          description: No credit cards found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/credit-cards/{creditCardId}:
+    get:
+      summary: Get credit card by ID
+      operationId: getCreditCardById
+      parameters:
+        - name: creditCardId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Credit Card details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditCardResponse'
+        '404':
+          description: Credit Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     put:
       summary: Update a credit card
       operationId: updateCreditCard
       parameters:
-        - name: id
+        - name: creditCardId
           in: path
           required: true
           schema:
@@ -116,30 +239,77 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreditCardRequest'
+              $ref: '#/components/schemas/CreditCard'
       responses:
         '200':
-          description: Credit card updated successfully
+          description: Credit Card updated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BaseResponse'
+                $ref: '#/components/schemas/CreditCardResponse'
         '404':
-          description: Credit card not found
+          description: Credit Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     delete:
       summary: Delete a credit card
       operationId: deleteCreditCard
       parameters:
-        - name: id
+        - name: creditCardId
           in: path
           required: true
           schema:
             type: string
       responses:
         '200':
-          description: Credit card deleted successfully
+          description: Credit Card deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/credit-cards/customer/{customerId}:
+    get:
+      summary: Get credit cards by customer ID
+      operationId: getCreditCardsByCustomerId
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Credit Cards for customer retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditCardListResponse'
         '404':
-          description: Credit card not found
+          description: No credit cards found for customer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
     BaseResponse:
@@ -147,42 +317,99 @@ components:
       properties:
         status:
           type: integer
-          example: 200
         message:
           type: string
-          example: "Success"
         data:
           type: object
-    BaseResponseList:
+          nullable: true
+    ErrorResponse:
       type: object
       properties:
         status:
           type: integer
-          example: 200
         message:
           type: string
-          example: "Success"
         data:
-          type: array
-          items:
-            type: object
-    CreditRequest:
+          type: object
+          nullable: true
+    Credit:
       type: object
       properties:
+        id:
+          type: string
         customerId:
           type: string
         creditType:
           type: string
-          enum: [PERSONAL_CREDIT, BUSINESS_CREDIT]
-        creditAmount:
+          enum: [PERSONAL, BUSINESS]
+        amount:
           type: number
-    CreditCardRequest:
+          format: decimal
+        remainingBalance:
+          type: number
+          format: decimal
+        interestRate:
+          type: number
+          format: decimal
+        createdAt:
+          type: string
+          format: date-time
+        modifiedAt:
+          type: string
+          format: date-time
+    CreditResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Credit'
+    CreditListResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Credit'
+    CreditCard:
       type: object
       properties:
+        id:
+          type: string
         customerId:
           type: string
-        creditCardType:
+        cardType:
           type: string
-          enum: [PERSONAL, BUSINESS]
+          enum: [PERSONAL_CREDIT_CARD, BUSINESS_CREDIT_CARD]
         creditLimit:
           type: number
+          format: decimal
+        availableBalance:
+          type: number
+          format: decimal
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        modifiedAt:
+          type: string
+          format: date-time
+    CreditCardResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CreditCard'
+    CreditCardListResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/CreditCard'

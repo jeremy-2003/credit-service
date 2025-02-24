@@ -168,43 +168,32 @@ class CreditServiceTest {
     }
     @Test
     void validateCustomer_CacheHit_Success() {
-        // Configurar el mock del customer cache para devolver un cliente
         when(customerCacheService.getCustomer(anyString()))
                 .thenReturn(Mono.just(testCustomer));
-        // Configurar el mock del repositorio para simular que no hay créditos existentes
         when(creditRepository.findByCustomerId(anyString()))
                 .thenReturn(Flux.empty());
-        // Configurar el mock del repositorio para el save
         when(creditRepository.save(any(Credit.class)))
                 .thenReturn(Mono.just(testCredit));
-        // Configurar el mock del productor de eventos
         doNothing().when(creditEventProducer).publishCreditCreated(any(Credit.class));
         StepVerifier.create(creditService.createCredit(testCredit))
                 .expectNext(testCredit)
                 .verifyComplete();
-        // Verificar que no se llamó al servicio de cliente
         verify(customerClientService, never()).getCustomerById(anyString());
         verify(creditRepository).findByCustomerId(anyString());
         verify(creditRepository).save(any(Credit.class));
     }
     @Test
     void validateCustomer_CacheMissServiceSuccess_Success() {
-        // Configurar el mock del cache para simular cache miss
         when(customerCacheService.getCustomer(anyString()))
                 .thenReturn(Mono.empty());
-        // Configurar el mock del servicio de cliente
         when(customerClientService.getCustomerById(anyString()))
                 .thenReturn(Mono.just(testCustomer));
-        // Configurar el mock del cache para guardar el cliente
         when(customerCacheService.saveCustomer(anyString(), any()))
                 .thenReturn(Mono.empty());
-        // Configurar el mock del repositorio para simular que no hay créditos existentes
         when(creditRepository.findByCustomerId(anyString()))
                 .thenReturn(Flux.empty());
-        // Configurar el mock del repositorio para el save
         when(creditRepository.save(any(Credit.class)))
                 .thenReturn(Mono.just(testCredit));
-        // Configurar el mock del productor de eventos
         doNothing().when(creditEventProducer).publishCreditCreated(any(Credit.class));
         StepVerifier.create(creditService.createCredit(testCredit))
                 .expectNext(testCredit)

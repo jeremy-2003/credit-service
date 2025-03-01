@@ -5,6 +5,7 @@ import com.bank.creditservice.model.account.Account;
 import com.bank.creditservice.model.account.AccountType;
 import com.bank.creditservice.model.creditcard.CreditCard;
 import com.bank.creditservice.model.creditcard.CreditCardType;
+import com.bank.creditservice.model.creditcard.PaymentStatus;
 import com.bank.creditservice.model.customer.Customer;
 import com.bank.creditservice.model.customer.CustomerType;
 import com.bank.creditservice.repository.CreditCardRepository;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -27,16 +29,19 @@ public class CreditCardService {
     private final CustomerClientService customerClientService;
     private final CreditCardEventProducer creditCardEventProducer;
     private final AccountClientService accountClientService;
+    private final CustomerEligibilityService customerEligibilityService;
     public CreditCardService(CreditCardRepository creditCardRepository,
                              CustomerClientService customerClientService,
                              CustomerCacheService customerCacheService,
                              CreditCardEventProducer creditCardEventProducer,
-                             AccountClientService accountClientService) {
+                             AccountClientService accountClientService,
+                             CustomerEligibilityService customerEligibilityService) {
         this.creditCardRepository = creditCardRepository;
         this.customerCacheService = customerCacheService;
         this.customerClientService = customerClientService;
         this.creditCardEventProducer = creditCardEventProducer;
         this.accountClientService = accountClientService;
+        this.customerEligibilityService = customerEligibilityService;
     }
     private Mono<Customer> validateCustomer(String customerId) {
         log.info("Validating customer with ID: {}", customerId);
@@ -65,57 +70,75 @@ public class CreditCardService {
                 .onErrorResume(e -> Mono.empty());
     }
     public Mono<CreditCard> createCreditCard(CreditCard creditCard) {
-        return validateCustomer(creditCard.getCustomerId())
-                .flatMap(validateCustomer -> {
-                    if ((validateCustomer.getCustomerType() == CustomerType.PERSONAL &&
-                            CreditCardType.BUSINESS_CREDIT_CARD == creditCard.getCardType()) ||
-                            (validateCustomer.getCustomerType() == CustomerType.BUSINESS &&
-                                    CreditCardType.PERSONAL_CREDIT_CARD == creditCard.getCardType())) {
-                        return Mono.error(new RuntimeException("Customer type does not match credit card type"));
+        return customerEligibilityService.hasOverdueDebt(creditCard.getCustomerId())
+                .flatMap(hasOverdueDebt -> {
+                    if (hasOverdueDebt) {
+                        return Mono.error(new RuntimeException(
+                                "Customer has overdue debt and cannot create a new credit card"));
                     }
-                    return accountClientService.getAccountsByCustomer(validateCustomer.getId())
-                            .flatMapMany(accounts -> {
-                                if (validateCustomer.getCustomerType() == CustomerType.PERSONAL
-                                        && !accounts.isEmpty()) {
-                                    boolean hasSavings = accounts.stream()
-                                            .anyMatch(account -> AccountType.SAVINGS.equals(account.getAccountType()));
-                                    if (hasSavings) {
-                                        String accountId = accounts.stream()
-                                                .filter(account -> AccountType.SAVINGS.equals(account.getAccountType()))
-                                                .findFirst()
-                                                .map(Account::getId)
-                                                .orElse(null);
-                                        if (accountId != null) {
-                                            return accountClientService.updateVipPymStatus(accountId, true, "VIP")
-                                                    .thenMany(Flux.defer(() -> customerClientService
-                                                        .updateVipPymStatus(creditCard.getCustomerId(), true)
-                                                            .thenMany(Flux.empty())));
-                                        }
-                                    }
-                                } else if (validateCustomer.getCustomerType() == CustomerType.BUSINESS
-                                        && !accounts.isEmpty()) {
-                                    List<Mono<Void>> updateMonos = accounts.stream()
-                                            .filter(account -> AccountType.CHECKING
-                                                .equals(account.getAccountType()))
-                                            .map(account -> accountClientService
-                                                .updateVipPymStatus(account.getId(), true, "PYM").then())
-                                            .collect(Collectors.toList());
-                                    return Flux.concat(updateMonos)
-                                            .thenMany(Flux.defer(() -> customerClientService
-                                                .updateVipPymStatus(creditCard.getCustomerId(),
-                                                        true).thenMany(Flux.empty())));
+                    return validateCustomer(creditCard.getCustomerId())
+                            .flatMap(validateCustomer -> {
+                                if ((validateCustomer.getCustomerType() == CustomerType.PERSONAL &&
+                                        CreditCardType.BUSINESS_CREDIT_CARD == creditCard.getCardType()) ||
+                                        (validateCustomer.getCustomerType() == CustomerType.BUSINESS &&
+                                                CreditCardType.PERSONAL_CREDIT_CARD == creditCard.getCardType())) {
+                                    return Mono.error(new RuntimeException("Customer type does not match credit card type"));
                                 }
-                                return Flux.empty();
-                            })
-                            .then(Mono.defer(() -> {
-                                creditCard.setCreatedAt(LocalDateTime.now());
-                                creditCard.setAvailableBalance(creditCard.getCreditLimit());
-                                creditCard.setModifiedAt(null);
-                                creditCard.setStatus("ACTIVE");
-                                return creditCardRepository.save(creditCard);
-                            }));
+                                return accountClientService.getAccountsByCustomer(validateCustomer.getId())
+                                        .flatMapMany(accounts -> {
+                                            if (validateCustomer.getCustomerType() == CustomerType.PERSONAL
+                                                    && !accounts.isEmpty()) {
+                                                boolean hasSavings = accounts.stream()
+                                                        .anyMatch(account -> AccountType.SAVINGS.equals(account.getAccountType()));
+                                                if (hasSavings) {
+                                                    String accountId = accounts.stream()
+                                                            .filter(account -> AccountType.SAVINGS.equals(account.getAccountType()))
+                                                            .findFirst()
+                                                            .map(Account::getId)
+                                                            .orElse(null);
+                                                    if (accountId != null) {
+                                                        return accountClientService.updateVipPymStatus(accountId, true, "VIP")
+                                                                .thenMany(Flux.defer(() -> customerClientService
+                                                                        .updateVipPymStatus(creditCard.getCustomerId(), true)
+                                                                        .thenMany(Flux.empty())));
+                                                    }
+                                                }
+                                            } else if (validateCustomer.getCustomerType() == CustomerType.BUSINESS
+                                                    && !accounts.isEmpty()) {
+                                                List<Mono<Void>> updateMonos = accounts.stream()
+                                                        .filter(account -> AccountType.CHECKING
+                                                                .equals(account.getAccountType()))
+                                                        .map(account -> accountClientService
+                                                                .updateVipPymStatus(account.getId(), true, "PYM").then())
+                                                        .collect(Collectors.toList());
+                                                return Flux.concat(updateMonos)
+                                                        .thenMany(Flux.defer(() -> customerClientService
+                                                                .updateVipPymStatus(creditCard.getCustomerId(),
+                                                                        true).thenMany(Flux.empty())));
+                                            }
+                                            return Flux.empty();
+                                        })
+                                        .then(Mono.defer(() -> {
+                                            creditCard.setCreatedAt(LocalDateTime.now());
+                                            creditCard.setAvailableBalance(creditCard.getCreditLimit());
+                                            creditCard.setModifiedAt(null);
+                                            creditCard.setStatus("ACTIVE");
+                                            creditCard.setPaymentStatus(PaymentStatus.PAID);
+                                            LocalDateTime nextMonth = LocalDateTime.now().plusMonths(1);
+                                            creditCard.setCutoffDate(nextMonth);
+                                            creditCard.setPaymentDueDate(nextMonth.plusDays(20));
+                                            creditCard.setMinimumPayment(BigDecimal.ZERO);
+                                            return creditCardRepository.save(creditCard);
+                                        }));
+                            });
                 })
-                .doOnSuccess(creditCardEventProducer::publishCreditCardCreated);
+                .doOnSuccess(creditCardEventProducer::publishCreditCardCreated)
+                .doOnError(error -> {
+                    if (error.getMessage() != null && error.getMessage().contains("overdue debt")) {
+                        log.warn("Credit card creation rejected for customer {} due to overdue debt",
+                                creditCard.getCustomerId());
+                    }
+                });
     }
 
     public Flux<CreditCard> getAllCreditCards() {

@@ -1,6 +1,8 @@
 package com.bank.creditservice.service;
 
 import com.bank.creditservice.event.CreditEventProducer;
+import com.bank.creditservice.model.credit.CreditStatus;
+import com.bank.creditservice.model.creditcard.PaymentStatus;
 import com.bank.creditservice.model.customer.Customer;
 import com.bank.creditservice.model.customer.CustomerType;
 import com.bank.creditservice.repository.CreditRepository;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -20,14 +23,17 @@ public class CreditService {
     private final CustomerCacheService customerCacheService;
     private final CustomerClientService customerClientService;
     private final CreditEventProducer creditEventProducer;
+    private final CustomerEligibilityService customerEligibilityService;
     public CreditService(CreditRepository creditRepository,
                          CustomerClientService customerClientService,
                          CustomerCacheService customerCacheService,
-                         CreditEventProducer creditEventProducer) {
+                         CreditEventProducer creditEventProducer,
+                         CustomerEligibilityService customerEligibilityService) {
         this.creditRepository = creditRepository;
         this.customerCacheService = customerCacheService;
         this.customerClientService = customerClientService;
         this.creditEventProducer = creditEventProducer;
+        this.customerEligibilityService = customerEligibilityService;
     }
 
     private Mono<Customer> validateCustomer(String customerId) {
@@ -57,32 +63,51 @@ public class CreditService {
                 .onErrorResume(e -> Mono.empty());
     }
     public Mono<Credit> createCredit(Credit credit) {
-        return validateCustomer(credit.getCustomerId())
-                .flatMap(customer -> {
-                    if ((customer.getCustomerType() == CustomerType.PERSONAL
-                            && credit.getCreditType() == CreditType.BUSINESS) ||
-                            (customer.getCustomerType() == CustomerType.BUSINESS
-                                    && credit.getCreditType() == CreditType.PERSONAL)) {
-                        return Mono.error(new RuntimeException("Customer type does not match credit type"));
+        return customerEligibilityService.hasOverdueDebt(credit.getCustomerId())
+                .flatMap(hasOverDueDebt -> {
+                    if (hasOverDueDebt) {
+                        return Mono.error(new RuntimeException
+                                ("Customer has overdue debt and cannot create a new credit"));
                     }
-                    if (customer.getCustomerType() == CustomerType.PERSONAL) {
-                        return creditRepository.findByCustomerId(credit.getCustomerId())
-                            .hasElements()
-                            .flatMap(hasCredit -> {
-                                if (hasCredit) {
-                                    return Mono.error(new RuntimeException("Personal customer can only " +
-                                            "have one active credit"));
+                    return validateCustomer(credit.getCustomerId())
+                            .flatMap(customer -> {
+                                if ((customer.getCustomerType() == CustomerType.PERSONAL
+                                        && credit.getCreditType() == CreditType.BUSINESS) ||
+                                        (customer.getCustomerType() == CustomerType.BUSINESS
+                                                && credit.getCreditType() == CreditType.PERSONAL)) {
+                                    return Mono.error(new RuntimeException("Customer type does not match credit type"));
+                                }
+                                if (customer.getCustomerType() == CustomerType.PERSONAL) {
+                                    return creditRepository.findByCustomerId(credit.getCustomerId())
+                                            .hasElements()
+                                            .flatMap(hasCredit -> {
+                                                if (hasCredit) {
+                                                    return Mono.error(new RuntimeException("Personal customer can only " +
+                                                            "have one active credit"));
+                                                }
+                                                credit.setRemainingBalance(credit.getAmount());
+                                                credit.setCreatedAt(LocalDateTime.now());
+                                                credit.setModifiedAt(LocalDateTime.now());
+                                                credit.setCreditStatus(CreditStatus.ACTIVE);
+                                                credit.setPaymentStatus(PaymentStatus.PENDING);
+                                                BigDecimal minimumPayment = credit.getAmount().multiply(new BigDecimal("0.10"));
+                                                credit.setMinimumPayment(minimumPayment);
+                                                credit.setNextPaymentDate(LocalDateTime.now().plusDays(30));
+                                                return creditRepository.save(credit);
+                                            });
                                 }
                                 credit.setRemainingBalance(credit.getAmount());
                                 credit.setCreatedAt(LocalDateTime.now());
+                                credit.setModifiedAt(LocalDateTime.now());
+                                credit.setCreditStatus(CreditStatus.ACTIVE);
+                                credit.setPaymentStatus(PaymentStatus.PENDING);
+                                BigDecimal minimumPayment = credit.getAmount().multiply(new BigDecimal("0.10"));
+                                credit.setMinimumPayment(minimumPayment);
+                                credit.setNextPaymentDate(LocalDateTime.now().plusDays(30));
                                 return creditRepository.save(credit);
-                            });
-                    }
-                    credit.setRemainingBalance(credit.getAmount());
-                    credit.setCreatedAt(LocalDateTime.now());
-                    return creditRepository.save(credit);
-                })
-                .doOnSuccess(creditEventProducer::publishCreditCreated);
+                            })
+                            .doOnSuccess(creditEventProducer::publishCreditCreated);
+                });
     }
     public Flux<Credit> getAllCredits() {
         return creditRepository.findAll();
@@ -103,6 +128,18 @@ public class CreditService {
                     existingCredit.setInterestRate(updatedCredit.getInterestRate());
                     existingCredit.setRemainingBalance(updatedCredit.getRemainingBalance());
                     existingCredit.setModifiedAt(LocalDateTime.now());
+                    if (updatedCredit.getPaymentStatus() != null) {
+                        existingCredit.setPaymentStatus(updatedCredit.getPaymentStatus());
+                    }
+                    if (updatedCredit.getCreditStatus() != null) {
+                        existingCredit.setCreditStatus(updatedCredit.getCreditStatus());
+                    }
+                    if (updatedCredit.getNextPaymentDate() != null) {
+                        existingCredit.setNextPaymentDate(updatedCredit.getNextPaymentDate());
+                    }
+                    if (updatedCredit.getMinimumPayment() != null) {
+                        existingCredit.setMinimumPayment(updatedCredit.getMinimumPayment());
+                    }
                     return creditRepository.save(existingCredit);
                 })
                 .doOnSuccess(creditEventProducer::publishCreditUpdated);

@@ -1,5 +1,6 @@
 package com.bank.creditservice.model.credit;
 
+import com.bank.creditservice.model.creditcard.PaymentStatus;
 import lombok.*;
 import nonapi.io.github.classgraph.json.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -23,4 +24,9 @@ public class Credit {
     private BigDecimal interestRate;
     private LocalDateTime createdAt;
     private LocalDateTime modifiedAt;
+
+    private PaymentStatus paymentStatus;
+    private CreditStatus creditStatus;
+    private LocalDateTime nextPaymentDate;
+    private BigDecimal minimumPayment;
 }

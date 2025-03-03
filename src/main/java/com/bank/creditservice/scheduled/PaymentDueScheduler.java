@@ -20,7 +20,7 @@ public class PaymentDueScheduler {
     @Autowired
     private CreditCardRepository creditCardRepository;
 
-    @Scheduled(cron = "10 14 01 * * ?")
+    @Scheduled(cron = "59 59 23 * * ?")
     public void checkOverduePayments() {
         log.info("Starting daily check for overdue payments");
         LocalDateTime now = LocalDateTime.now();

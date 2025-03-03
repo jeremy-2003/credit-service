@@ -4,6 +4,7 @@ import static org.mockito.Mockito.*;
 
 import com.bank.creditservice.model.creditcard.CreditCard;
 import com.bank.creditservice.model.creditcard.CreditCardType;
+import com.bank.creditservice.model.creditcard.PaymentStatus;
 import com.bank.creditservice.service.CreditCardService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,11 @@ class CreditCardControllerTest {
             new BigDecimal(10000),
             "ACTIVE",
             LocalDateTime.now(),
-            LocalDateTime.now()
+            LocalDateTime.now(),
+            PaymentStatus.PENDING,
+            LocalDateTime.now(),
+            LocalDateTime.now(),
+            new BigDecimal("10.00")
         );
     }
     @Test

@@ -1,5 +1,6 @@
 package com.bank.creditservice.service;
 
+import com.bank.creditservice.client.CustomerClientService;
 import com.bank.creditservice.event.CreditEventProducer;
 import com.bank.creditservice.model.credit.CreditStatus;
 import com.bank.creditservice.model.creditcard.PaymentStatus;
@@ -66,8 +67,8 @@ public class CreditService {
         return customerEligibilityService.hasOverdueDebt(credit.getCustomerId())
                 .flatMap(hasOverDueDebt -> {
                     if (hasOverDueDebt) {
-                        return Mono.error(new RuntimeException
-                                ("Customer has overdue debt and cannot create a new credit"));
+                        return Mono.error(new RuntimeException("Customer " +
+                            "has overdue debt and cannot create a new credit"));
                     }
                     return validateCustomer(credit.getCustomerId())
                             .flatMap(customer -> {
@@ -82,15 +83,16 @@ public class CreditService {
                                             .hasElements()
                                             .flatMap(hasCredit -> {
                                                 if (hasCredit) {
-                                                    return Mono.error(new RuntimeException("Personal customer can only " +
-                                                            "have one active credit"));
+                                                    return Mono.error(new RuntimeException("Personal customer " +
+                                                        "can only have one active credit"));
                                                 }
                                                 credit.setRemainingBalance(credit.getAmount());
                                                 credit.setCreatedAt(LocalDateTime.now());
                                                 credit.setModifiedAt(LocalDateTime.now());
                                                 credit.setCreditStatus(CreditStatus.ACTIVE);
                                                 credit.setPaymentStatus(PaymentStatus.PENDING);
-                                                BigDecimal minimumPayment = credit.getAmount().multiply(new BigDecimal("0.10"));
+                                                BigDecimal minimumPayment = credit.getAmount()
+                                                    .multiply(new BigDecimal("0.10"));
                                                 credit.setMinimumPayment(minimumPayment);
                                                 credit.setNextPaymentDate(LocalDateTime.now().plusDays(30));
                                                 return creditRepository.save(credit);

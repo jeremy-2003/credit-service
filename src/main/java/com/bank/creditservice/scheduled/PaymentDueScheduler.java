@@ -1,19 +1,14 @@
 package com.bank.creditservice.scheduled;
 
-import com.bank.creditservice.model.credit.Credit;
 import com.bank.creditservice.model.credit.CreditStatus;
-import com.bank.creditservice.model.creditcard.CreditCard;
 import com.bank.creditservice.model.creditcard.PaymentStatus;
 import com.bank.creditservice.repository.CreditCardRepository;
 import com.bank.creditservice.repository.CreditRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Flux;
 
 import java.time.LocalDateTime;
 @Slf4j
@@ -25,7 +20,7 @@ public class PaymentDueScheduler {
     @Autowired
     private CreditCardRepository creditCardRepository;
 
-    @Scheduled(cron = "59 59 23 * * ?")
+    @Scheduled(cron = "10 14 01 * * ?")
     public void checkOverduePayments() {
         log.info("Starting daily check for overdue payments");
         LocalDateTime now = LocalDateTime.now();
